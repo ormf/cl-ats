@@ -1,8 +1,7 @@
 ;;; Analysis
 
-(in-package :cl-ats)
-
-(tracker "clarinet.aif"
+;;; cl
+(tracker (concatenate 'string *ats-snd-dir* "clarinet.aif")
 	 'cl
 	 :start 0.0
 	 :hop-size 1/4
@@ -18,7 +17,7 @@
 	 :debug nil)
 
 ;;; crt-cs6
-(tracker "crt-cs6.snd" 
+(tracker (concatenate 'string *ats-snd-dir* "crt-cs6.snd") 
 	 'crt-cs6
 	 :start 0.1
 	 :lowest-frequency 500.0
@@ -39,6 +38,7 @@
 	 :optimize t)
 
 ;;; Synthesis
+
 
 ;;; cl
 ;;; plain resynthesis (sines only)
@@ -69,6 +69,7 @@
 		 :time-ptr '(0.0 1.0 0.9 0.3 1.0 0.0)
 		 :noise-env '(0.0 0.0 0.9 1.0 1.0 1.0)
 		 :amp-env '(0 0 0.1 0 0.9 1 1 1)))
+
 
 ;;; crt-cs6
 ;;; plain resynthesis (sines only)
