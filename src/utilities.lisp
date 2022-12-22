@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -7,12 +6,16 @@
 ;;; utilities.cl
 ;;;
 
+(in-package :cl-ats)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Defaults and constants
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;;; some useful constants as double floats
-(defconstant +pi-over-two+ (double-float (/ pi 2.0)))
-(defconstant +two-pi+ (double-float (* pi 2.0)))
+(defconstant +pi-over-two+ (double (/ pi 2.0)))
+(defconstant +two-pi+ (double (* pi 2.0)))
 
 ;;; some system defaults
 (defparameter *ats-max-db-spl* 100.0)
@@ -24,9 +27,74 @@
 ;;; variable to keep names of loaded sounds
 (defparameter *ats-sounds* nil)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; soundfile utils (loading and saving soundfiles into/from lisp
+;;; arrays
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(definstrument get-samples (fil arr offs)
+  (let ((num (length arr)))
+    (file->array fil 0 offs num arr)
+    arr))
+
+(defun get-input-data (file &optional (offs 0))
+  (let* ((fil (open-input* file))
+         (num (sound-framples fil))
+         (arr (make-double-float-array num :initial-element (double 0.0))))
+    (get-samples file arr offs)))
+
+(defun get-n-input-data (file num &optional (offs 0))
+  (let* ((arr (make-double-float-array num :initial-element (double 0.0))))
+    (get-samples file arr offs)))
+
+;;; (get-input-data (concatenate 'string *ats-snd-dir* "clarinet.aif"))
+
+(definstrument get-samples (file arr &key (offs 0) (chan 0))
+  "read samples of a soundfile into a supplied array. Returns the array"
+  (let ((num (length arr)))
+    (file->array file chan offs num arr)
+    arr))
+
+(defun sfile->array (file &key (offs 0) (chan 0) count)
+  "read a soundfile into a freshly allocated array and return the
+array."
+  (let* ((fil (open-input* file))
+         (num (if count
+                  (min count (- (sound-framples fil) offs))
+                  (- (sound-framples fil) offs)))
+         (arr (make-double-float-array num :initial-element (double 0.0))))
+    (get-samples file arr :offs offs :chan chan)))
+
+(definstrument set-samples (fname arr frample-num rate chans)
+  (array->file fname arr (* frample-num chans) rate chans)
+  fname)
+
+(defun array->sfile (fname arrays &key (offs 0) (rate 44100) count)
+  "save <arrays> into a soundfile. <arrays> is a seq of arrays, each
+containing the sound data of one channel. The arrays have to have
+equal size."
+  (let ((len (length (first arrays))))
+    (unless (apply #'= (cons len (mapcar #'length (cdr arrays))))
+      (error "array->sfile: array lengths don't match!"))
+    (let* ((num (if count
+                    (max 0 (min count (- len offs)))
+                    (max 0 (- len offs))))
+           (chans (length arrays))
+           (array (make-array (* chans num) :element-type 'double-float :initial-element (double 0.0)))
+           (arr-ptr 0))
+      (dotimes (i num)
+        (dotimes (o chans)
+          (setf (aref array arr-ptr)
+                (aref (elt arrays o) i))
+          (incf arr-ptr)))
+      (set-samples fname array num rate chans))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; General sound init tools
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 ;;; add new sound to the list of sounds
 (defmacro add-sound (sound)
   `(pushnew (ats-sound-name ,sound) *ats-sounds* :test #'equal))
@@ -339,7 +407,7 @@ should be done after finding out frq-av
 		    for time from 0 by t-inc
 		    do
 		    (setf (aref (aref (ats-sound-pha sound) i) k)
-			  (double-float (interp-phase pha-1 frq-1 alpha beta time))))
+			  (float (interp-phase pha-1 frq-1 alpha beta time) 1.0d0)))
 		  (incf st (second seg))))))))))
 	     
 (defun fill-sound-gaps (sound &optional (min-length *ats-min-segment-length*))
@@ -405,7 +473,7 @@ should be done after finding out frq-av
     (dolist (seg segments)
       (if (< (second seg) min-length)
 	  (loop for i from (first seg) below (+ (first seg) (second seg)) do
-	    (setf (aref (aref (ats-sound-amp sound) par) i) (double-float 0.0)))))))
+	    (setf (aref (aref (ats-sound-amp sound) par) i) (float 0.0 1.0d0)))))))
 
 ;;; removes short segments from all partials
 ;;; (this could take account of SMR, coming soon!)
@@ -450,7 +518,7 @@ fills gaps in the amplitudes of
 	    (aref (ats-sound-band-energy sound) i)))
     ;;; finally we store things in the sound
     (setf (ats-sound-band-energy sound) new-bands)
-    (setf (ats-sound-bands sound)(coerce band-l 'array))))
+    (setf (ats-sound-bands sound)(coerce band-l 'vector))))
 
 
 
@@ -538,7 +606,7 @@ gives the documentation of <funcion>
 	(do ((i 0 (1+ i)))
 	    ((= i len) aa-r)
 	  (setf (aref aa-r i) 
-		(double-float
+		(double
 		 (envelope-interp (envelope-interp (aref a-temps i) tr) env-points))))))
 
 ;;; just to avoid problems deleting elements from a list
@@ -555,7 +623,10 @@ of memory
 "
 `(progn (efface (ats-sound-name ,sound) *sounds*)
         (makunbound (quote ,sound))
-        (if ,rg (excl:gc))
+        (if ,rg
+            #+sbcl (sb-kernel::gc)
+            #-sbcl excl:gc
+            )
         *ats-sounds*))
 
 ;;; functions for amplitude conversion

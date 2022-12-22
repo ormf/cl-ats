@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -11,6 +10,9 @@
 
 ;;; we need to block DC out of the residual
 ;;; picked from CLM's prc-toolkit
+
+(in-package :cl-ats)
+
 (def-clm-struct dcb (input 0.0) (output 0.0))
 
 (defmacro dcblock (b sample0) 
@@ -133,7 +135,7 @@ transfers band energy to partials
 		      do
 		      (setf (aref (aref par-energy p) frame) eng)))
 		  ;;; clear energy from band
-		  (setf (aref (aref (ats-sound-band-energy sound) b) frame) (double-float 0.0))
+		  (setf (aref (aref (ats-sound-band-energy sound) b) frame) (double 0.0))
 		  )
 	      (if (and debug (> band-energy 0.0))
 		  (format t "Frame: ~d Band: ~d Energy: ~a no partials~%" frame b band-energy)))))))
@@ -153,116 +155,118 @@ transfers energy from partials to a band
 
 
 (defun residual-analysis (file sound &key 
-			       (min-fft-size 4096)
-			       (equalize nil)
-			       (pad-factor 2)
-			       (band-edges NIL)
-			       (par-energy NIL)
-			       (debug NIL)
-			       (verbose NIL))
+			               (min-fft-size 4096)
+			               (equalize nil)
+			               (pad-factor 2)
+			               (band-edges NIL)
+			               (par-energy NIL)
+			               (debug NIL)
+			               (verbose NIL))
   (let* (;;; open input residual file 
 	 (fil (open-input* file))
- 	 ;;; file sampling-rate
+         (input-data (sfile->array file))
+;;; file sampling-rate
 	 (file-sampling-rate (sound-srate fil))
-	 ;;; hop size
+;;; hop size
 	 (hop (ats-sound-frame-size sound))
-	 ;;; for M we consider we hop by 1/hop-factor a window
-	 ;;; if this is too small we go up to the next power of 2
+;;; for M we consider we hop by 1/hop-factor a window
+;;; if this is too small we go up to the next power of 2
 	 (M (ats-sound-window-size sound))
-	 ;;; we use fft-size equal to the zero-pad times M
-	 ;;; so by default M=N
+;;; we use fft-size equal to the zero-pad times M
+;;; so by default M=N
 	 (N (residual-get-N M min-fft-size pad-factor))
-	 ;;; fft structure
+;;; fft structure
 	 (fft-struct (make-ats-fft :size N
 				   :rate file-sampling-rate
 				   :fdr (make-double-float-array N :initial-element 0.0)
 				   :fdi (make-double-float-array N :initial-element 0.0)))
-	 ;;; window norm (we use 1.0 beacause we are applying a rectangular window)
+;;; window norm (we use 1.0 beacause we are applying a rectangular window)
 	 (norm 1.0)
-	 ;;; threshold for noise
+;;; threshold for noise
 	 (threshold (db-amp *ats-noise-threshold*))
-	 ;;; analysis frames
+;;; analysis frames
 	 (frames (ats-sound-frames sound))
-	 ;;; magic number for fft frequencies (frquency resolution)
-	 (fft-mag (double-float (/ file-sampling-rate N)))	
-	 ;;; sub-band limits:
-	 ;;; array with lower and upper limits in bins for each sub-band
+;;; magic number for fft frequencies (frquency resolution)
+	 (fft-mag (double (/ file-sampling-rate N)))	
+;;; sub-band limits:
+;;; array with lower and upper limits in bins for each sub-band
 	 (band-limits (residual-get-bands fft-mag *ats-critical-band-edges*))
-	 ;;; number of bands
+;;; number of bands
 	 (bands (1- (length band-limits)))
-	 ;;; array to store band energy arrays
-	 (band-arr (make-array bands :element-type 'array))
-	 ;;; array for energy values
-	 (band-energy (make-double-float-array bands :initial-element 0.0))
-	 ;;; time domain energy 
+;;; array to store band energy arrays
+	 (band-arr (make-array bands))
+;;; array for energy values
+	 (band-energy (make-double-float-array bands :initial-element (double 0.0)))
+;;; time domain energy 
 	 (time-domain-energy 0.0)
-	 ;;; frequency domain energy 
+;;; frequency domain energy 
 	 (freq-domain-energy 0.0)
-	 ;;; DC blocker
+;;; DC blocker
 	 (dc-block (make-dcb))
-	 ;;; sample counter
+;;; sample counter
 	 (smp 0)
-	 ;;; central point of the window
+;;; central point of the window
 	 (M-over-2 (floor (- M 1) 2))
-	 ;;; first point in fft buffer where to write
+;;; first point in fft buffer where to write
 	 (first-point (- N M-over-2))
-	 ;;; set file pointer half a window from the first sample
+;;; set file pointer half a window from the first sample
 	 (filptr (- M-over-2)))
-    ;;; first fill out band-arr with arrays 
+;;; first fill out band-arr with arrays 
     (loop for i from 0 below bands do
-      (setf (aref band-arr i)(make-double-float-array frames :initial-element 0.0)))
-    ;;; Main loop
-    ;;; tell user we start the analysis
-    (format t "frames= ~D " frames)
-    (format t "M = ~D N = ~D~%" M N)
-    (format t "Analyzing residual...~%")
-    (loop for frame-n from 0 below frames do
-      ;;; clear fft arrays
+      (setf (aref band-arr i)(make-double-float-array frames :initial-element (double 0.0))))
+;;; Main loop
+;;; tell user we start the analysis
+    (format t "Analyzing residual~%")
+    (loop for frame-n below frames
+          with modulo = (floor frames 40)
+          do
+      (when (zerop (mod frame-n modulo)) (format t "."))
+;;; clear fft arrays
       (clear-array (ats-fft-fdr fft-struct))
       (clear-array (ats-fft-fdi fft-struct))
-      ;;; read samples from input and multiply by window
-      ;;; multiply by window
+;;; read samples from input and multiply by window
+;;; multiply by window
       (loop for k from 0 below M do
 	(if (>= filptr 0) 
 	    (setf (aref (ats-fft-fdr fft-struct)(mod (+ k first-point) N))
-		  (double-float (dcblock dc-block (ina filptr fil)))))
+		  (double (dcblock dc-block (if (< filptr (length input-data)) (aref input-data filptr) (double 0.0))))))
 	(incf filptr))
-      ;;; set sample counter
+;;; set sample counter
       (setf smp (- filptr M-over-2 1))
-      ;;; take the enrgy of this input block
+;;; take the enrgy of this input block
       (if equalize (setf time-domain-energy (residual-compute-time-domain-energy fft-struct)))
-      ;;; take the dft 
+;;; take the dft 
       (fft  (ats-fft-fdr fft-struct) (ats-fft-fdi fft-struct) (ats-fft-size fft-struct) 1)
-      ;;; now we compute energy in sub-bands 
+;;; now we compute energy in sub-bands 
       (residual-compute-band-energy fft-struct band-limits band-energy norm)
       (when equalize
-      ;;; we have the energy in each sub-band into band-energy
-      ;;; we should now try matching the energy of the spectrum with the 
-      ;;; one of the time domain residual
+;;; we have the energy in each sub-band into band-energy
+;;; we should now try matching the energy of the spectrum with the 
+;;; one of the time domain residual
 	(setf freq-domain-energy (* 2.0 (loop for k across band-energy sum k)))
 	(if debug (format t "TDE: ~s FDE: ~s~%" time-domain-energy  freq-domain-energy))
-      ;;; scale band energy to match time domain energy
+;;; scale band energy to match time domain energy
 	(loop 
 	  with e-ratio = (if (> freq-domain-energy 0.0)
 			     (/ time-domain-energy freq-domain-energy)
-			   1.0)
+			     1.0)
 	  for b from 0 below bands do
-	  (setf (aref band-energy b)(* e-ratio (aref band-energy b)))))
-      ;;; store this set of energy values
+	    (setf (aref band-energy b)(* e-ratio (aref band-energy b)))))
+;;; store this set of energy values
       (loop 
 	for b across band-energy 
 	for k from 0 
 	do
-	(if (< b  threshold) (setf b (double-float 0.0)))
-	(setf (aref (aref band-arr k) frame-n) b)
-	(if debug (format t "[Band: ~s Energy: ~s] " k (if (> b 0.0)(amp-db b) '-INF))))
-      ;;; update file pointer
+	   (if (< b  threshold) (setf b (double 0.0)))
+	   (setf (aref (aref band-arr k) frame-n) b)
+	   (if debug (format t "[Band: ~s Energy: ~s] " k (if (> b 0.0)(amp-db b) '-INF))))
+;;; update file pointer
       (setf filptr (+ (- filptr M) hop))
-      ;;; verbose mode
+;;; verbose mode
       (if verbose (format t "<Frame:~s Smp: ~s>  " frame-n smp)))
-    ;;; store data into ats sound
+;;; store data into ats sound
     (setf (ats-sound-band-energy sound) band-arr)
-    ;;; set band numbers
+;;; set band numbers
     (setf (ats-sound-bands sound) 
 	  (make-array bands :initial-contents (loop for k from 0 below 25 collect k)))
     (when par-energy

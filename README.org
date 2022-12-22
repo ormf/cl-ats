@@ -1,4 +1,30 @@
-A T S
+* ATS git version 2022
+
+  This is an update of the original ATS library version 1.0 by Juan
+  Pampin (see the original README below). The update was done by Orm
+  Finnendahl as the original version wasn't working anymore with
+  current versions of clm. This update is now working and compatible
+  with clm-5. The code tries to be minimally invasive. The following
+  changes have been made:
+
+  - put the code into a git repository. The initial commit is the
+    original code of ATS 1.0 (from around 2002).
+
+  - added a package and .asd file to make it loadable with asdf or
+    quicklisp.
+
+  - changed filename endings from .cl or .ins to .lisp.
+
+  - Added (in-package :cl-ats) to the head of each file.
+
+  - Changed all code reading directly from or writing directly to
+    soundfiles to preload the soundfile data into lisp arrays and
+    storing soundfiles from lisp arrays due to a change in clm-5 which
+    doesn't allow reading from/writing to soundfiles from interpreted
+    lisp.
+    
+* A T S
+  (this is the original readme for the 1.0 version of ATS)
 
 ATS is a library of Lisp functions for spectral Analysis, 
 Transformation, and Synthesis of sound based on a sinusoidal plus

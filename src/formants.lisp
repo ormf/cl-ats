@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -6,6 +5,8 @@
 ;;;
 ;;; formants.lisp
 ;;;
+
+(in-package :cl-ats)
 
 ;;; minimum amplitude value in dB
 (defparameter *formant-amp-tresh* -60)
@@ -46,7 +47,7 @@ from [first-partial] to [last-partial]
   (let ((last-partial (if last-partial last-partial (ats-sound-partials sound))))
     (loop for i from first-partial below last-partial do
       (setf (aref (aref (ats-sound-amp sound) i) frame)
-	    (double-float
+	    (double
 	    (envelope-interp (aref (aref (ats-sound-frq sound) i) frame) env))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,2 +1,10 @@
 *~
 *.fasl
+src/clm_GET_SAMPLES.c
+src/clm_GET_SAMPLES.so
+src/clm_SET_SAMPLES.c
+src/clm_SET_SAMPLES.so
+synth/clm_SIN_NOI_SYNTH.c
+synth/clm_SIN_NOI_SYNTH.so
+synth/clm_SIN_SYNTH.c
+synth/clm_SIN_SYNTH.so

@@ -1,7 +1,9 @@
+(in-package :cl-ats)
+
 ;;; Analysis
 
 ;;; cl
-(tracker (concatenate 'string *ats-snd-dir* "clarinet.aif")
+(tracker "clarinet.aif"
 	 'cl
 	 :start 0.0
 	 :hop-size 1/4
@@ -17,7 +19,7 @@
 	 :debug nil)
 
 ;;; crt-cs6
-(tracker (concatenate 'string *ats-snd-dir* "crt-cs6.snd") 
+(tracker "crt-cs6.snd" 
 	 'crt-cs6
 	 :start 0.1
 	 :lowest-frequency 500.0

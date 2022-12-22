@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -17,6 +16,32 @@
 ;;; arrays of data arranged by partial
 ;;; par-energy and band-energy hold
 ;;; noise modeling information (experimental format)
+
+(in-package :cl-ats)
+
+(defmacro def-clm-struct (name &rest fields)
+  `(eval-when #-(or clozure excl) (:compile-toplevel :load-toplevel)
+	      #+(or clozure excl) (compile load eval)
+     (progn
+       (defstruct (,name (:type vector) :named)
+	 ,@(loop for fld in fields collect 
+	     (if (listp fld) 
+		 (if (not (symbolp (second fld)))
+		     fld
+		   (if (not (member (second fld) (list nil 'array 'integer 'float 'double-float 'real 'short-float 'single-float 'rational 'number 'bignum 'fixnum)))
+		       (error "~A is not a type def-clm-struct can handle" (second fld))
+		     (first fld)))
+	       fld)))
+       ,@(loop for field in fields and i from 1 collect
+	   (let ((fieldname (concatenate 'string
+					 (symbol-name name)
+					 "-"
+					 (symbol-name (if (listp field) (first field) field)))))
+	   `(progn (clm::def-clm-fun (intern ,fieldname)
+		     #'(lambda (var x) (clm::package-op 'clm::<aref> var (list 'aref (cadr x) ,i))))
+		   (push (list (intern ,fieldname) 'clm::<setf-aref> (list ,i)) clm::setf-functions)))))))
+
+
 (def-clm-struct ats-sound  
   (name "new-sound")
   ;;; global sound info.
@@ -27,20 +52,20 @@
   (frames INTEGER)
   (bands array)
   ;;; Info. deduced from analysis
-  (optimized NIL)
+  (optimized nil)
   (ampmax 0.0)
   (frqmax 0.0)
   (frq-av array) 
   (amp-av array) 
   (dur 0.0)
   ;;; Sinusoidal Data
-  (time array array)
-  (frq array array)
-  (amp array array)
-  (pha array array)
+  (time array)
+  (frq array)
+  (amp array)
+  (pha array)
   ;;; Noise Data
-  (energy array array) 
-  (band-energy array array))
+  (energy array) 
+  (band-energy array))
 
 ;;; Structure: ats-fft
 ;;; ==================

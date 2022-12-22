@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -12,6 +11,8 @@
 ;;; the same).
 
 ;;; array.c
+
+(in-package :cl-ats)
 
 (defun max_array (a n)
 "

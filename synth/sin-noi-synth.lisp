@@ -33,6 +33,8 @@
 ;;; (noise-only NIL) -> switch for noise-only synthesis
 ;;; (band-noise t) -> switch for band-noise synthesis
 
+(in-package :cl-ats)
+
 (definstrument sin-noi-synth
   (start-time sound &key 
 	      (amp-scale 1.0)

@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -6,6 +5,8 @@
 ;;;
 ;;; do-partials.lisp
 ;;; general purpose partial iteration macros 
+
+(in-package :cl-ats)
 
 ;;; applies single function through partials
 (defmacro do-partials (sound function parameter value)

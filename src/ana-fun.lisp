@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -9,15 +8,28 @@
 ;;; This file contains auxiliary functions
 ;;; for ATS's main analysis algorithms.
 
+(in-package :cl-ats)
+
+#|
 (defun compute-frames (total-samps hop st nd)
-  "computes the number of frames in the analysis
-we want to have an extra frame at the end to prevent
-chopping the eneding"
+  "computes the number of frames in the analysis.
+We want to have an extra frame at the end to prevent
+chopping the ending."
   (labels ((get-next-frm (coarse-frames)
 		       (if (> (+ (- (* coarse-frames hop) hop) st) nd) 
 			   coarse-frames
 			 (get-next-frm (incf coarse-frames)))))
     (get-next-frm (floor total-samps hop))))
+|#
+
+(defun compute-frames (total-samps hop st nd)
+  "computes the number of frames in the analysis.
+We want to have an extra frame at the end to prevent
+chopping the ending."
+  (declare (ignore total-samps))
+  (+ 2 (floor (- nd st) hop)))
+
+
 
 ;;; Window normalization
 (defun normalize-window (window)
@@ -25,6 +37,6 @@ chopping the eneding"
   (let* ((M (length window))
 	 (norm (window-norm window)))
     (loop for i from 0 below M do
-      (setf (aref window i) (double-float (* (aref window i) norm))))))
+      (setf (aref window i) (float (* (aref window i) norm) 1.0d0)))))
 
 

@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -8,8 +7,10 @@
 ;;;
 ;;; Functions for saving and loading ATS sounds in binary format
 
+(in-package :cl-ats)
+
 (defparameter *ats-header-size* 10)
-(defparameter *ats-magic-number* (double-float 123.0))
+(defparameter *ats-magic-number* (double 123.0))
 
 #|
 
@@ -28,7 +29,7 @@ type (number, see below)
 
 -ATS frames can be of four different types:
 
-1) without phase or noise:
+1. without phase or noise:
 ==========================
 time (frame starting time)
 amp (par#0 amplitude)
@@ -38,7 +39,7 @@ amp (par#n amplitude)
 frq (par#n frequency)
 
 
-2) with phase but not noise:
+2. with phase but not noise:
 ============================
 time (frame starting time)
 amp (par#0 amplitude)
@@ -50,7 +51,7 @@ frq (par#n frequency)
 pha (par#n phase)
 
 
-3) with noise but not phase:
+3. with noise but not phase:
 ============================
 time (frame starting time)
 amp (par#0 amplitude)
@@ -63,7 +64,7 @@ energy (band#0 energy)
 ...
 energy (band#n energy)
 
-4) with phase and noise:
+4. with phase and noise:
 ========================
 time (frame starting time)
 amp (par#0 amplitude)
@@ -91,18 +92,18 @@ in case the file already exists it gets overwritten
   (if (probe-file file)(delete-file file))
   ;;; now open output file and create data holders
   (let* ((fd (c-create-file file))
-	 (sr (double-float (ats-sound-sampling-rate sound)))
-	 (frame-size (double-float (ats-sound-frame-size sound)))
-	 (window-size (double-float (ats-sound-window-size sound)))
-	 (partials (double-float (ats-sound-partials sound)))
-	 (frames (double-float (ats-sound-frames sound)))
-	 (max-frq (double-float (ats-sound-frqmax sound)))
-	 (max-amp (double-float (ats-sound-ampmax sound)))
-	 (dur (double-float (ats-sound-dur sound)))
+	 (sr (double (ats-sound-sampling-rate sound)))
+	 (frame-size (double (ats-sound-frame-size sound)))
+	 (window-size (double (ats-sound-window-size sound)))
+	 (partials (double (ats-sound-partials sound)))
+	 (frames (double (ats-sound-frames sound)))
+	 (max-frq (double (ats-sound-frqmax sound)))
+	 (max-amp (double (ats-sound-ampmax sound)))
+	 (dur (double (ats-sound-dur sound)))
 	 (has-pha (if (and save-phase (ats-sound-pha sound)) T NIL))
 	 (has-noi (if (and save-noise (or (ats-sound-energy sound)(ats-sound-band-energy sound)))
 		      T NIL))
-	 (type (double-float 
+	 (type (double 
 		(cond ((and has-pha has-noi)
 		       4)
 		      ((and (not has-pha) has-noi)
@@ -169,8 +170,8 @@ in case the file already exists it gets overwritten
 	;;; of <frames> arrays of 25 elements each
 	(loop for k from 0 below *ats-critical-bands* do
 	  (if (and band-l (member k band-l))
-	      (setf (aref noi-arr k)(double-float (aref (aref (ats-sound-band-energy sound)(position k band-l)) i)))
-	    (setf (aref noi-arr k)(double-float (energy-to-band sound k i)))))
+	      (setf (aref noi-arr k)(double (aref (aref (ats-sound-band-energy sound)(position k band-l)) i)))
+	    (setf (aref noi-arr k)(double (energy-to-band sound k i)))))
 	(clm-write-floats fd noi-arr *ats-critical-bands*)))
     (c-close fd)))
 

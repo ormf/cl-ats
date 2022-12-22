@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -9,6 +8,8 @@
 ;;; This file contains the implementation
 ;;; of a masking curve evaluation
 ;;; algorithm using a critical band based model
+
+(in-package :cl-ats)
 
 (defparameter *ats-critical-band-edges* 
   '(0.0 100.0 200.0 300.0 400.0 510.0 630.0 770.0 920.0 1080.0 1270.0 
@@ -116,7 +117,7 @@ the masking curves (must be <= 0dB)
      (evaluate-smr peaks :slope-l ,slope-l :delta-dB ,delta-dB :debug ,debug)
      (make-double-float-array partials 
 			      :initial-contents (loop for p in peaks collect
-						  (if (> (ats-peak-smr p) 0.0) (ats-peak-smr p) (double-float 0.0))))))
+						  (if (> (ats-peak-smr p) 0.0) (ats-peak-smr p) (double 0.0))))))
 
 
 (defmacro smr-average (sound &key (first-frame 0)(last-frame NIL)(slope-l -27.0)(delta-dB -50)(debug nil))
@@ -128,6 +129,6 @@ the masking curves (must be <= 0dB)
 						      (smr-frame ,sound f :slope-l -27.0 :delta-dB -50 :debug nil)))))
      (make-double-float-array partials 
          :initial-contents (loop for p from 0 below partials collect
-			     (/ (loop for n from 0 below frames sum (aref (aref smr-frames n) p)) (double-float frames))))))
+			     (/ (loop for n from 0 below frames sum (aref (aref smr-frames n) p)) (double frames))))))
 	  
 	  

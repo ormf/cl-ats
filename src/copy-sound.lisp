@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -6,6 +5,8 @@
 ;;;
 ;;; copy-sound.lisp
 ;;;
+
+(in-package :cl-ats)
 
 ;;; copy of arrays of arrays
 (defun copy-ats-data-array (array)

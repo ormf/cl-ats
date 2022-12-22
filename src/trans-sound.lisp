@@ -1,4 +1,3 @@
-;;; -*- syntax: common-lisp; package: clm; base: 10; mode:lisp -*-
 ;;;
 ;;; ATS 
 ;;; by Juan Pampin
@@ -6,6 +5,8 @@
 ;;;
 ;;; trans-sound.cl
 ;;;
+
+(in-package :cl-ats)
 
 ;;; transposition function
 (defun trans-sound (sound factor &key (name nil)(simp nil)(formants nil))
