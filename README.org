@@ -1,0 +1,55 @@
+A T S
+
+ATS is a library of Lisp functions for spectral Analysis, 
+Transformation, and Synthesis of sound based on a sinusoidal plus
+critical-band noise model. A sound in ATS is a symbolic object 
+representing a spectral model that can be sculpted using a variety of
+transformation functions. Spectral data can be accessed through an API, 
+and saved to/loaded from disk.  ATS analysis and synthesis algorithms 
+are implemented using the CLM (Common Lisp Music) synthesis and sound 
+processing language.
+
+This document explains how to install ATS, documentation can be found at 
+http://www-ccrma.stanford.edu/~juan/ATS.html
+
+This software is distributed for free, without warranties of any kind.
+Send bug reports or suggestions to juan@ccrma.stanford.edu
+
+Installing ATS (on Linux):
+you must have CLM-2 running in order to install ATS. You can get CLM at:
+
+http://www-ccrma.stanford.edu/software/clm/
+
+NOTE: you must get the latest CLM-2 distribution, otherwise the save/load
+functions of ATS will not work. Those functions use code that comes in the CLM 
+distribution file clm1.cl, be sure this file gets compiled and loaded when
+you build CLM.
+
+Once you have a CLM Lisp image built up, unpack the ATS tarball 
+in your system doing:
+
+tar xvzf  ATS-1.0.tar.gz
+
+this will create a directory called ATS-1.0 inside the directory
+were the package was extracted. If this was not done in your home 
+directory you should edit the file all.cl to reflect ATS' path, you
+can do this by changing the first line of code:
+ 
+(defparameter *ats-dir* "~/ATS-1.0/")
+
+save changes to the file, then fire up CLM and load all.cl: 
+
+(load "all.cl")
+
+this should compile and load all ATS' Lisp files and CLM instruments.
+
+Running ATS:
+
+To run ATS you can build a new Lisp image with both CLM and ATS in it, 
+or just load all.cl from a running CLM image, compiled files will be 
+automatically loaded.
+
+Now you are ready to go, see examples.cl for analysis and synthesis
+examples. Enjoy!.
+
+Juan Pampin (http://www-ccrma.stanford.edu/~juan)
