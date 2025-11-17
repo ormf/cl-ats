@@ -2,10 +2,8 @@
 
 (asdf:defsystem #:cl-ats
   :description "ATS file parser for Common Lisp
-  and port of Juan Pampin's ats lisp code.
+  and port of Juan Pampin's ats lisp code."
 
-  The parser code makes extensive use of Peter Seibels Binary Data Parser
-  from ch24/25 of \"Practical common Lisp\""
   :author "Orm Finnendahl"
   :license  "Public Domain"
   :version "0.0.1"
